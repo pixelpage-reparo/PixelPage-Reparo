@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
 import { AuthLayout } from "@/components/auth/AuthLayout"
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -15,6 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/password-input"
 import { signUpWithPassword } from "@/hooks/use-auth"
 import { signupSchema, type SignupFormValues } from "@/lib/validators/auth.schema"
 
@@ -68,6 +70,17 @@ function SignupPage() {
         </span>
       }
     >
+      <GoogleSignInButton label="Criar conta com Google" />
+
+      <div className="relative my-5">
+        <div className="absolute inset-0 flex items-center">
+          <span className="border-border w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card text-muted-foreground px-2">ou</span>
+        </div>
+      </div>
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <FormField
@@ -119,7 +132,7 @@ function SignupPage() {
               <FormItem>
                 <FormLabel>Senha</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="Pelo menos 6 caracteres" {...field} />
+                  <PasswordInput placeholder="Pelo menos 6 caracteres" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

@@ -3,7 +3,6 @@ import { Navigate } from "react-router-dom"
 
 import { EmptyState } from "@/components/shared/EmptyState"
 import { useModuleAccess } from "@/hooks/use-permissions"
-import { useAuth } from "@/hooks/use-auth"
 import type { ModuleKey } from "@/types/domain"
 import { ShieldAlert } from "lucide-react"
 
@@ -16,13 +15,11 @@ interface ModuleGateProps {
  * Route-level guard: hides a module's page from an employee the owner
  * hasn't granted access to. Dashboard itself is never gated (everyone who's
  * authenticated has somewhere to land) — redirect there instead of blanking
- * the screen for a module with no access.
+ * the screen for a module with no access. RequireCompany already guarantees
+ * a profile exists before /app/* renders, so no profile check is needed here.
  */
 export function ModuleGate({ module, children }: ModuleGateProps) {
   const hasAccess = useModuleAccess(module)
-  const { profile } = useAuth()
-
-  if (!profile) return null
 
   if (!hasAccess) {
     if (module === "dashboard") {

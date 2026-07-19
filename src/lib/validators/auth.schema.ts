@@ -14,6 +14,9 @@ export const signupSchema = z.object({
 })
 export type SignupFormValues = z.infer<typeof signupSchema>
 
+export const completeSignupSchema = signupSchema.pick({ companyName: true, fullName: true })
+export type CompleteSignupFormValues = z.infer<typeof completeSignupSchema>
+
 export const forgotPasswordSchema = z.object({
   email: z.string().email("Informe um e-mail válido"),
 })

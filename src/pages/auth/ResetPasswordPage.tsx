@@ -14,7 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/password-input"
 import { updatePassword } from "@/hooks/use-auth"
 import { resetPasswordSchema, type ResetPasswordFormValues } from "@/lib/validators/auth.schema"
 
@@ -53,7 +53,7 @@ function ResetPasswordPage() {
               <FormItem>
                 <FormLabel>Nova senha</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="Pelo menos 6 caracteres" {...field} />
+                  <PasswordInput placeholder="Pelo menos 6 caracteres" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -67,7 +67,7 @@ function ResetPasswordPage() {
               <FormItem>
                 <FormLabel>Confirme a nova senha</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="Repita a senha" {...field} />
+                  <PasswordInput placeholder="Repita a senha" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

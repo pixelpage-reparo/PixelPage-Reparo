@@ -107,6 +107,24 @@ export async function signInWithPassword(email: string, password: string) {
   if (error) throw error
 }
 
+export async function signInWithGoogle(redirectTo: string) {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo },
+  })
+  if (error) throw error
+}
+
+/**
+ * Re-runs profile/company/permissions loading for the given user. Used by
+ * CompleteSignupPage after a Google-first-login user creates their company
+ * directly via RPC — that flow doesn't go through signUpWithPassword's
+ * pending-metadata bootstrap, so the store needs an explicit refresh.
+ */
+export async function refreshProfile(userId: string) {
+  await loadProfileData(userId)
+}
+
 interface SignUpResult {
   needsEmailConfirmation: boolean
 }

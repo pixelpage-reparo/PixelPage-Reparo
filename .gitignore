@@ -13,8 +13,12 @@ dist-ssr
 *.local
 
 # Environment variables (never commit real keys)
+# .env.* already matches .env.local and any .env.<name>.local variation;
+# .env*.local is listed explicitly too, and *.local above is a third,
+# broader net — belt and suspenders on purpose for secrets.
 .env
 .env.*
+.env*.local
 !.env.example
 
 # Editor directories and files
