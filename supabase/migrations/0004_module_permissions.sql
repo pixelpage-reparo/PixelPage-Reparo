@@ -7,8 +7,10 @@ create table module_permissions (
   company_id uuid not null references companies(id) on delete cascade,
   module_key text not null check (
     module_key in (
-      'dashboard', 'service_orders', 'clients', 'inventory',
-      'finance', 'team', 'pos', 'showcase'
+      'dashboard', 'mesa_fluxo', 'service_orders', 'quotes',
+      'clients', 'inventory', 'pos', 'resale_devices', 'showcase',
+      'post_sale', 'services_catalog', 'finance', 'cash_register',
+      'reports', 'team', 'settings'
     )
   ),
   can_view boolean not null default false,

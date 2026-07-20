@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Plus } from "lucide-react"
+import { CircleMinus, CirclePlus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -37,14 +37,19 @@ import {
 } from "@/lib/validators/finance.schema"
 import type { PaymentMethod } from "@/types/domain"
 
-export function TransactionFormDialog() {
+interface TransactionFormDialogProps {
+  /** Presets the dialog's type — used by the header's separate Despesa/Receita buttons. */
+  defaultType?: "income" | "expense"
+}
+
+export function TransactionFormDialog({ defaultType = "income" }: TransactionFormDialogProps) {
   const [open, setOpen] = useState(false)
   const createTransaction = useCreateFinancialTransaction()
 
   const form = useForm<FinancialTransactionFormValues>({
     resolver: zodResolver(financialTransactionFormSchema),
     defaultValues: {
-      type: "income",
+      type: defaultType,
       category: "",
       amount_cents: 0,
       payment_method: "pix",
@@ -58,7 +63,7 @@ export function TransactionFormDialog() {
       await createTransaction.mutateAsync(values)
       toast.success("Lançamento registrado")
       setOpen(false)
-      form.reset()
+      form.reset({ ...form.formState.defaultValues, type: defaultType } as FinancialTransactionFormValues)
     } catch (error) {
       toast.error("Não foi possível registrar o lançamento", {
         description: error instanceof Error ? error.message : "Tente novamente.",
@@ -67,11 +72,17 @@ export function TransactionFormDialog() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next)
+        if (next) form.setValue("type", defaultType)
+      }}
+    >
       <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="size-4" />
-          Novo lançamento
+        <Button variant={defaultType === "expense" ? "destructive" : "default"} className="gap-2">
+          {defaultType === "expense" ? <CircleMinus className="size-4" /> : <CirclePlus className="size-4" />}
+          {defaultType === "expense" ? "Despesa" : "Receita"}
         </Button>
       </DialogTrigger>
       <DialogContent>

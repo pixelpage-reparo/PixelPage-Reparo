@@ -3,11 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase/client"
 import type { Database } from "@/lib/supabase/types"
-import type {
-  ResaleDeviceFormValues,
-  ShowcaseSettingsFormValues,
-} from "@/lib/validators/showcase.schema"
+import type { ShowcaseSettingsFormValues } from "@/lib/validators/showcase.schema"
 
+type ResaleDeviceInsert = Database["public"]["Tables"]["resale_devices"]["Insert"]
 type ResaleDeviceUpdate = Database["public"]["Tables"]["resale_devices"]["Update"]
 
 export function useResaleDevices() {
@@ -32,7 +30,7 @@ export function useCreateResaleDevice() {
   const { company } = useAuth()
 
   return useMutation({
-    mutationFn: async (input: ResaleDeviceFormValues) => {
+    mutationFn: async (input: Omit<ResaleDeviceInsert, "company_id">) => {
       if (!company) throw new Error("Nenhuma empresa ativa")
       const { data, error } = await supabase
         .from("resale_devices")

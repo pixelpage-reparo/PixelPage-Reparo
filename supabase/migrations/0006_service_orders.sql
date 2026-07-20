@@ -31,6 +31,10 @@ create table service_orders (
   checklist jsonb not null default '{}'::jsonb, -- screen/camera/audio/connectivity booleans + notes
   reported_issue text,
   technician_diagnosis text,
+  -- "Recebido Por" (intake) vs "Executor" (repair) — two distinct per-OS
+  -- role tags from the Nova OS wizard's step 5, both optional and both
+  -- validated same-company by the existing service_orders RLS policies.
+  received_by uuid references profiles(id),
   assigned_to uuid references profiles(id),
   warranty_days integer not null default 90,
   warranty_notes text,

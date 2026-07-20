@@ -9,7 +9,10 @@ import type {
   FinancialTransactionType,
   ModuleKey,
   PaymentMethod,
+  ProfileJobTitle,
   ProfileRole,
+  QuoteStatus,
+  ResaleDeviceAcquisitionSource,
   ResaleDeviceCondition,
   SaleStatus,
   ServiceOrderItemKind,
@@ -46,11 +49,26 @@ export interface Database {
           trial_ends_at: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          whatsapp_number: string | null
+          address_cep: string | null
+          address_street: string | null
+          address_number: string | null
+          address_complement: string | null
+          address_neighborhood: string | null
+          address_city: string | null
+          address_state: string | null
+          language: "pt-BR" | "es" | "en"
+          warranty_terms_text: string | null
+          photo_retention_days: number
+          google_review_url: string | null
           created_at: string
           updated_at: string
         },
         | "id" | "logo_url" | "primary_color" | "currency" | "daily_goal_cents"
         | "plan" | "trial_ends_at" | "stripe_customer_id" | "stripe_subscription_id"
+        | "whatsapp_number" | "address_cep" | "address_street" | "address_number"
+        | "address_complement" | "address_neighborhood" | "address_city" | "address_state"
+        | "language" | "warranty_terms_text" | "photo_retention_days" | "google_review_url"
         | "created_at" | "updated_at"
       >
       profiles: Table<
@@ -61,11 +79,17 @@ export interface Database {
           email: string
           avatar_url: string | null
           role: ProfileRole
+          job_title: ProfileJobTitle | null
+          app_access_enabled: boolean
+          bancada_intake: boolean
+          bancada_executor: boolean
+          last_seen_at: string | null
           is_active: boolean
           created_at: string
           updated_at: string
         },
-        "avatar_url" | "role" | "is_active" | "created_at" | "updated_at"
+        | "avatar_url" | "role" | "job_title" | "app_access_enabled" | "bancada_intake"
+        | "bancada_executor" | "last_seen_at" | "is_active" | "created_at" | "updated_at"
       >
       module_permissions: Table<
         {
@@ -90,10 +114,11 @@ export interface Database {
           email: string | null
           document: string | null
           notes: string | null
+          birth_date: string | null
           created_at: string
           updated_at: string
         },
-        "id" | "email" | "document" | "notes" | "created_at" | "updated_at"
+        "id" | "email" | "document" | "notes" | "birth_date" | "created_at" | "updated_at"
       >
       client_devices: Table<
         {
@@ -121,6 +146,7 @@ export interface Database {
           checklist: Record<string, unknown>
           reported_issue: string | null
           technician_diagnosis: string | null
+          received_by: string | null
           assigned_to: string | null
           warranty_days: number
           warranty_notes: string | null
@@ -130,14 +156,22 @@ export interface Database {
           signature_data_url: string | null
           signed_at: string | null
           delivered_at: string | null
+          device_unlock_secret_encrypted: string | null
+          // Generated column (0030) — never selected directly by anyone;
+          // read this instead of device_unlock_secret_encrypted to know
+          // whether an order has a secret saved, since the real column is
+          // column-level revoked from `authenticated` and always comes back
+          // null/omitted for a normal client query.
+          has_device_unlock_secret: boolean
           created_by: string | null
           created_at: string
           updated_at: string
         },
         | "id" | "os_number" | "client_id" | "client_device_id" | "status" | "checklist"
-        | "reported_issue" | "technician_diagnosis" | "assigned_to" | "warranty_days"
+        | "reported_issue" | "technician_diagnosis" | "received_by" | "assigned_to" | "warranty_days"
         | "warranty_notes" | "subtotal_cents" | "discount_cents" | "total_cents"
-        | "signature_data_url" | "signed_at" | "delivered_at" | "created_by"
+        | "signature_data_url" | "signed_at" | "delivered_at" | "device_unlock_secret_encrypted"
+        | "has_device_unlock_secret" | "created_by"
         | "created_at" | "updated_at"
       >
       service_order_status_history: Table<
@@ -159,6 +193,7 @@ export interface Database {
           company_id: string
           kind: ServiceOrderItemKind
           inventory_item_id: string | null
+          services_catalog_id: string | null
           description: string
           quantity: number
           unit_price_cents: number
@@ -166,7 +201,8 @@ export interface Database {
           created_at: string
           updated_at: string
         },
-        "id" | "inventory_item_id" | "quantity" | "unit_price_cents" | "total_cents" | "created_at" | "updated_at"
+        | "id" | "inventory_item_id" | "services_catalog_id" | "quantity"
+        | "unit_price_cents" | "total_cents" | "created_at" | "updated_at"
       >
       service_order_photos: Table<
         {
@@ -282,11 +318,20 @@ export interface Database {
           description: string | null
           status: "available" | "reserved" | "sold"
           is_public: boolean
+          acquisition_source: ResaleDeviceAcquisitionSource | null
+          acquisition_source_name: string | null
+          repair_cost_cents: number
+          min_price_cents: number | null
+          warranty_months: number
+          physical_location: string | null
+          accompanying_items: string[]
           created_at: string
           updated_at: string
         },
         | "id" | "storage_capacity" | "color" | "imei" | "cost_cents" | "description"
-        | "status" | "is_public" | "created_at" | "updated_at"
+        | "status" | "is_public" | "acquisition_source" | "acquisition_source_name"
+        | "repair_cost_cents" | "min_price_cents" | "warranty_months" | "physical_location"
+        | "accompanying_items" | "created_at" | "updated_at"
       >
       resale_device_photos: Table<
         {
@@ -311,6 +356,136 @@ export interface Database {
           updated_at: string
         },
         "id" | "is_enabled" | "whatsapp_number" | "headline" | "show_prices" | "created_at" | "updated_at"
+      >
+      services_catalog: Table<
+        {
+          id: string
+          company_id: string
+          name: string
+          category: string | null
+          default_price_cents: number
+          estimated_duration_minutes: number | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        },
+        | "id" | "category" | "default_price_cents" | "estimated_duration_minutes"
+        | "is_active" | "created_at" | "updated_at"
+      >
+      quotes: Table<
+        {
+          id: string
+          company_id: string
+          quote_number: number
+          client_id: string | null
+          client_device_id: string | null
+          status: QuoteStatus
+          device_description: string | null
+          reported_issue: string | null
+          technician_diagnosis: string | null
+          checklist: Record<string, unknown>
+          notes: string | null
+          subtotal_cents: number
+          discount_cents: number
+          total_cents: number
+          received_by: string | null
+          assigned_to: string | null
+          service_order_id: string | null
+          device_unlock_secret_encrypted: string | null
+          // Generated column (0030) — see the identical note on
+          // service_orders.has_device_unlock_secret above.
+          has_device_unlock_secret: boolean
+          converted_at: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        },
+        | "id" | "quote_number" | "client_id" | "client_device_id" | "status" | "device_description"
+        | "reported_issue" | "technician_diagnosis" | "checklist" | "notes" | "subtotal_cents" | "discount_cents"
+        | "total_cents" | "received_by" | "assigned_to" | "service_order_id"
+        | "device_unlock_secret_encrypted" | "has_device_unlock_secret" | "converted_at"
+        | "created_by" | "created_at" | "updated_at"
+      >
+      quote_items: Table<
+        {
+          id: string
+          quote_id: string
+          company_id: string
+          kind: ServiceOrderItemKind
+          inventory_item_id: string | null
+          services_catalog_id: string | null
+          description: string
+          quantity: number
+          unit_price_cents: number
+          total_cents: number
+          created_at: string
+          updated_at: string
+        },
+        | "id" | "inventory_item_id" | "services_catalog_id" | "quantity"
+        | "unit_price_cents" | "total_cents" | "created_at" | "updated_at"
+      >
+      message_templates: Table<
+        {
+          id: string
+          company_id: string
+          template_key: string
+          channel: "whatsapp" | "email"
+          body: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        },
+        "id" | "channel" | "is_active" | "created_at" | "updated_at"
+      >
+      payment_method_fees: Table<
+        {
+          id: string
+          company_id: string
+          payment_method: "cash" | "pix" | "debit" | "credit"
+          installments: number
+          fee_percent: number
+          created_at: string
+          updated_at: string
+        },
+        "id" | "installments" | "fee_percent" | "created_at" | "updated_at"
+      >
+      cash_register_sessions: Table<
+        {
+          id: string
+          company_id: string
+          opened_by: string | null
+          opened_at: string
+          starting_float_cents: number
+          closed_by: string | null
+          closed_at: string | null
+          counted_total_cents: number | null
+          expected_total_cents: number | null
+          discrepancy_cents: number | null
+          status: "open" | "closed"
+          notes: string | null
+          created_at: string
+          updated_at: string
+        },
+        | "id" | "opened_by" | "opened_at" | "starting_float_cents" | "closed_by" | "closed_at"
+        | "counted_total_cents" | "expected_total_cents" | "discrepancy_cents" | "status" | "notes"
+        | "created_at" | "updated_at"
+      >
+      recurring_expense_rules: Table<
+        {
+          id: string
+          company_id: string
+          description: string
+          amount_cents: number
+          category: string
+          frequency: "monthly" | "weekly"
+          day_of_month: number | null
+          is_active: boolean
+          last_generated_on: string | null
+          created_at: string
+          updated_at: string
+        },
+        | "id" | "category" | "frequency" | "day_of_month" | "is_active" | "last_generated_on"
+        | "created_at" | "updated_at"
       >
     }
     Views: {
@@ -339,6 +514,14 @@ export interface Database {
           p_reference_id: string | null
           p_created_by: string | null
         }
+        Returns: void
+      }
+      fn_get_device_secret_ciphertext: {
+        Args: { record_id: string; record_type: "service_order" | "quote" }
+        Returns: string
+      }
+      fn_copy_quote_device_secret: {
+        Args: { p_quote_id: string; p_service_order_id: string }
         Returns: void
       }
     }

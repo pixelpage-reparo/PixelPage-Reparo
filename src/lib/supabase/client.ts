@@ -1,11 +1,11 @@
-import { createClient } from "@supabase/supabase-js"
+import { createBrowserClient } from "@supabase/ssr"
 
 import { getEnv } from "@/lib/env"
 import type { Database } from "@/lib/supabase/types"
 
-// main.tsx already validated env at boot before this module ever loads;
-// this just reads the cached, already-valid result. If some other entry
-// point ever imports this file without going through main.tsx's flow,
+// The root layout already validated env at boot before this module ever
+// loads; this just reads the cached, already-valid result. If some other
+// entry point ever imports this file without going through that flow,
 // getEnv() still validates (and throws the same clear error) on its own.
 const env = getEnv()
 
@@ -25,6 +25,16 @@ function fetchWithTimeout(timeoutMs: number): typeof fetch {
   }
 }
 
-export const supabase = createClient<Database>(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY, {
-  global: { fetch: fetchWithTimeout(8000) },
-})
+/**
+ * Browser client — used by every Client Component data hook under
+ * src/hooks/queries/*.ts, unchanged from before the Next.js migration. RLS
+ * (not this client) is the real security boundary, so this is safe to
+ * construct with the public anon key exactly as it was under Vite.
+ */
+export const supabase = createBrowserClient<Database>(
+  env.NEXT_PUBLIC_SUPABASE_URL,
+  env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  {
+    global: { fetch: fetchWithTimeout(8000) },
+  }
+)

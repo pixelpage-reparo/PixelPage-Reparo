@@ -2,9 +2,39 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabase/client"
-import type { ServiceOrderFormValues } from "@/lib/validators/service-order.schema"
-import type { ServiceOrderItemValues } from "@/lib/validators/service-order.schema"
+import type { Database } from "@/lib/supabase/types"
+import type {
+  ServiceOrderItemValues,
+  ServiceOrderWizardValues,
+} from "@/lib/validators/service-order.schema"
 import type { ServiceOrderStatus } from "@/types/domain"
+
+type ServiceOrderRow = Database["public"]["Tables"]["service_orders"]["Row"]
+
+/**
+ * Every service_orders column `authenticated` can actually select, per the
+ * GRANT list in 0030_device_secret_column_lockdown.sql — deliberately not
+ * `select("*")`. A literal `SELECT *` expands to every column at parse
+ * time and then requires privilege on all of them, so once
+ * device_unlock_secret_encrypted was column-revoked, `select("*")` here
+ * would fail outright with "permission denied for table service_orders"
+ * instead of gracefully omitting just that column. Add new columns to both
+ * this list and that migration's GRANT list together, or they'll silently
+ * stop coming back from these two queries.
+ *
+ * The explicit `.returns<>()` calls below exist because this string is
+ * built with `+` (not a single literal), so postgrest-js's select parser
+ * can't statically infer a row shape from it and would otherwise fall back
+ * to an error type — `.returns<>()` overrides that with the real Row type.
+ * device_unlock_secret_encrypted is never actually present at runtime
+ * (that's the whole point), but nothing reads it anymore — everything uses
+ * has_device_unlock_secret instead.
+ */
+const SERVICE_ORDER_COLUMNS =
+  "id, company_id, os_number, client_id, client_device_id, status, checklist, reported_issue, " +
+  "technician_diagnosis, received_by, assigned_to, warranty_days, warranty_notes, subtotal_cents, " +
+  "discount_cents, total_cents, signature_data_url, signed_at, delivered_at, has_device_unlock_secret, " +
+  "created_by, created_at, updated_at"
 
 export function useServiceOrders() {
   const { company } = useAuth()
@@ -14,8 +44,9 @@ export function useServiceOrders() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("service_orders")
-        .select("*")
+        .select(SERVICE_ORDER_COLUMNS)
         .order("created_at", { ascending: false })
+        .returns<ServiceOrderRow[]>()
       if (error) throw error
       return data
     },
@@ -27,7 +58,12 @@ export function useServiceOrder(id: string | undefined) {
   return useQuery({
     queryKey: ["service-orders", "detail", id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("service_orders").select("*").eq("id", id!).single()
+      const { data, error } = await supabase
+        .from("service_orders")
+        .select(SERVICE_ORDER_COLUMNS)
+        .eq("id", id!)
+        .single()
+        .returns<ServiceOrderRow>()
       if (error) throw error
       return data
     },
@@ -68,7 +104,7 @@ export function useServiceOrderStatusHistory(serviceOrderId: string | undefined)
 }
 
 interface CreateServiceOrderInput {
-  form: ServiceOrderFormValues
+  form: ServiceOrderWizardValues
   items: ServiceOrderItemValues[]
 }
 
@@ -80,8 +116,12 @@ export function useCreateServiceOrder() {
     mutationFn: async ({ form, items }: CreateServiceOrderInput) => {
       if (!company || !profile) throw new Error("Nenhuma empresa ativa")
 
-      let clientDeviceId: string | null = null
-      if (form.client_id && (form.device_brand || form.device_model || form.device_serial_or_imei)) {
+      let clientDeviceId: string | null = form.client_device_id
+      if (
+        !clientDeviceId &&
+        form.client_id &&
+        (form.device_brand || form.device_model || form.device_serial_or_imei)
+      ) {
         const { data: device, error: deviceError } = await supabase
           .from("client_devices")
           .insert({
@@ -89,6 +129,7 @@ export function useCreateServiceOrder() {
             company_id: company.id,
             brand: form.device_brand || null,
             model: form.device_model || null,
+            color: form.device_color || null,
             serial_or_imei: form.device_serial_or_imei || null,
           })
           .select()
@@ -106,14 +147,19 @@ export function useCreateServiceOrder() {
           client_id: form.client_id,
           client_device_id: clientDeviceId,
           reported_issue: form.reported_issue,
+          technician_diagnosis: form.technician_diagnosis || null,
           checklist: {
             screen_ok: form.screen_ok,
             camera_ok: form.camera_ok,
             audio_ok: form.audio_ok,
             connectivity_ok: form.connectivity_ok,
             notes: form.checklist_notes ?? "",
+            physical_tags: form.physical_tags,
+            accessories_left: form.accessories_left,
           },
           warranty_days: form.warranty_days,
+          received_by: form.received_by,
+          assigned_to: form.assigned_to,
           subtotal_cents: subtotalCents,
           total_cents: subtotalCents,
           created_by: profile.id,
@@ -129,6 +175,7 @@ export function useCreateServiceOrder() {
             company_id: company.id,
             kind: item.kind,
             inventory_item_id: item.inventory_item_id ?? null,
+            services_catalog_id: item.services_catalog_id ?? null,
             description: item.description,
             quantity: item.quantity,
             unit_price_cents: item.unit_price_cents,
@@ -157,6 +204,7 @@ export function useAddServiceOrderItem(serviceOrderId: string) {
         company_id: company.id,
         kind: item.kind,
         inventory_item_id: item.inventory_item_id ?? null,
+        services_catalog_id: item.services_catalog_id ?? null,
         description: item.description,
         quantity: item.quantity,
         unit_price_cents: item.unit_price_cents,

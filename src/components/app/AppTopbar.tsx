@@ -1,6 +1,8 @@
-import { LogOut, Menu } from "lucide-react"
+"use client"
+
+import { LogOut, Menu, Settings } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
 import { AppSidebar } from "@/components/app/AppSidebar"
@@ -27,14 +29,14 @@ function initialsFor(name: string) {
 }
 
 export function AppTopbar() {
-  const navigate = useNavigate()
+  const router = useRouter()
   const { profile, company } = useAuth()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   async function handleSignOut() {
     try {
       await signOut()
-      navigate("/login")
+      router.push("/login")
     } catch (error) {
       toast.error("Não foi possível sair", {
         description: error instanceof Error ? error.message : "Tente novamente.",
@@ -84,6 +86,10 @@ export function AppTopbar() {
           <DropdownMenuLabel className="truncate">
             {profile?.full_name ?? "Minha conta"}
           </DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => router.push("/app/settings")}>
+            <Settings />
+            Minha Assistência
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut} variant="destructive">
             <LogOut />

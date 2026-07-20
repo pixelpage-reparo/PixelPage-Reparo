@@ -260,13 +260,14 @@ create policy "service_order_photos_delete_own_company" on service_order_photos
 -- service_orders — standard company scoping, plus:
 --   * created_by, if set, must be the caller (auth.uid()) — stops one
 --     employee from creating an OS attributed to someone else.
---   * assigned_to, if set, must be a profile in the same company.
+--   * assigned_to ("Executor") and received_by ("Recebido Por"), if set,
+--     must each be a profile in the same company.
 -- created_by is only checked by RLS on INSERT, not UPDATE (see the note
 -- above these policies), but the guard trigger further down makes it
 -- immutable outright — no UPDATE, by anyone, may change it at all, whether
 -- or not this policy's WITH CHECK would otherwise allow the row through.
--- assigned_to is checked on both INSERT and UPDATE since reassigning to a
--- different teammate is a normal, ongoing action.
+-- assigned_to/received_by are checked on both INSERT and UPDATE since
+-- reassigning either to a different teammate is a normal, ongoing action.
 -- ============================================================================
 alter table service_orders enable row level security;
 
@@ -283,6 +284,12 @@ create policy "service_orders_insert_own_company" on service_orders
         select 1 from profiles p where p.id = assigned_to and p.company_id = fn_current_company_id()
       )
     )
+    and (
+      received_by is null
+      or exists (
+        select 1 from profiles p where p.id = received_by and p.company_id = fn_current_company_id()
+      )
+    )
   );
 
 create policy "service_orders_update_own_company" on service_orders
@@ -293,6 +300,12 @@ create policy "service_orders_update_own_company" on service_orders
       assigned_to is null
       or exists (
         select 1 from profiles p where p.id = assigned_to and p.company_id = fn_current_company_id()
+      )
+    )
+    and (
+      received_by is null
+      or exists (
+        select 1 from profiles p where p.id = received_by and p.company_id = fn_current_company_id()
       )
     )
   );

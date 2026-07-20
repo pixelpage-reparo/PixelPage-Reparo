@@ -1,5 +1,5 @@
+import Link from "next/link"
 import type { ReactNode } from "react"
-import { Link } from "react-router-dom"
 
 import { Logo } from "@/components/shared/Logo"
 
@@ -14,7 +14,7 @@ export function AuthLayout({ title, description, children, footer }: AuthLayoutP
   return (
     <div className="bg-muted/30 flex min-h-svh items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
-        <Link to="/" className="mb-8 flex justify-center">
+        <Link href="/" className="mb-8 flex justify-center">
           <Logo size="lg" />
         </Link>
 

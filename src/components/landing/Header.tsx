@@ -1,6 +1,8 @@
+"use client"
+
 import { Menu } from "lucide-react"
+import Link from "next/link"
 import { useState } from "react"
-import { Link } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -41,7 +43,7 @@ export function Header() {
 
         <div className="hidden items-center gap-3 md:flex">
           <Button variant="ghost" asChild>
-            <Link to="/login">Entrar</Link>
+            <Link href="/login">Entrar</Link>
           </Button>
           <Button asChild>
             <a href="#planos">Testar grátis</a>
@@ -66,7 +68,7 @@ export function Header() {
               <div className="flex flex-col gap-2 pt-4">
                 <SheetClose asChild>
                   <Button variant="outline" asChild>
-                    <Link to="/login">Entrar</Link>
+                    <Link href="/login">Entrar</Link>
                   </Button>
                 </SheetClose>
                 <SheetClose asChild>

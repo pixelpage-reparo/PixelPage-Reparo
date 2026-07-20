@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Next.js
+.next
+out
+next-env.d.ts
+*.tsbuildinfo
+
 # Environment variables (never commit real keys)
 # .env.* already matches .env.local and any .env.<name>.local variation;
 # .env*.local is listed explicitly too, and *.local above is a third,

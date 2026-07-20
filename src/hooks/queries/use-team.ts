@@ -74,3 +74,44 @@ export function useToggleModulePermission() {
     },
   })
 }
+
+/**
+ * Bancada eligibility — whether this employee shows up as an option in the
+ * Nova OS / Orçamento wizards' "Recebido Por" / "Executor do Reparo"
+ * pickers. Independent of module_permissions and of job_title.
+ */
+export function useUpdateBancadaFlags() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      profileId,
+      bancadaIntake,
+      bancadaExecutor,
+    }: {
+      profileId: string
+      bancadaIntake?: boolean
+      bancadaExecutor?: boolean
+    }) => {
+      const updates: { bancada_intake?: boolean; bancada_executor?: boolean } = {}
+      if (bancadaIntake !== undefined) updates.bancada_intake = bancadaIntake
+      if (bancadaExecutor !== undefined) updates.bancada_executor = bancadaExecutor
+      const { error } = await supabase.from("profiles").update(updates).eq("id", profileId)
+      if (error) throw error
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["team-members"] }),
+  })
+}
+
+/** Toggles the PRO-plan-limited "Acesso no App" seat for an employee. */
+export function useUpdateAppAccess() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ profileId, enabled }: { profileId: string; enabled: boolean }) => {
+      const { error } = await supabase.from("profiles").update({ app_access_enabled: enabled }).eq("id", profileId)
+      if (error) throw error
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["team-members"] }),
+  })
+}

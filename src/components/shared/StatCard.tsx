@@ -11,7 +11,7 @@ interface StatCardProps {
     value: string
     direction: "up" | "down"
   }
-  tone?: "default" | "success" | "warning"
+  tone?: "default" | "success" | "warning" | "destructive"
   className?: string
 }
 
@@ -19,6 +19,7 @@ const toneIconClasses = {
   default: "bg-primary/10 text-primary",
   success: "bg-success-bg text-success",
   warning: "bg-warning-bg text-warning",
+  destructive: "bg-destructive/10 text-destructive",
 }
 
 export function StatCard({

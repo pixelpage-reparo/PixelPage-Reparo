@@ -47,6 +47,7 @@ export function ClientFormDialog({ trigger, client }: ClientFormDialogProps) {
       phone: client?.phone ?? "",
       email: client?.email ?? "",
       document: client?.document ?? "",
+      birth_date: client?.birth_date ?? "",
       notes: client?.notes ?? "",
     },
   })
@@ -58,6 +59,7 @@ export function ClientFormDialog({ trigger, client }: ClientFormDialogProps) {
         phone: client?.phone ?? "",
         email: client?.email ?? "",
         document: client?.document ?? "",
+        birth_date: client?.birth_date ?? "",
         notes: client?.notes ?? "",
       })
     }
@@ -66,7 +68,7 @@ export function ClientFormDialog({ trigger, client }: ClientFormDialogProps) {
 
   async function onSubmit(values: ClientFormValues) {
     try {
-      const payload = { ...values, email: values.email || null }
+      const payload = { ...values, email: values.email || null, birth_date: values.birth_date || null }
       if (isEdit && client) {
         await updateClient.mutateAsync({ id: client.id, ...payload })
         toast.success("Cliente atualizado")
@@ -127,6 +129,18 @@ export function ClientFormDialog({ trigger, client }: ClientFormDialogProps) {
                     <Input type="email" placeholder="Opcional" {...field} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="birth_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data de nascimento</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
                 </FormItem>
               )}
             />

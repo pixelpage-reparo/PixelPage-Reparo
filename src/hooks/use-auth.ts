@@ -49,6 +49,12 @@ async function loadProfileData(userId: string) {
 
   setProfileData(profile, company ?? null, visibleModules)
   setStatus("authenticated")
+
+  // Fire-and-forget — the closest approximation to "last access" available
+  // without service-role access to auth.users.last_sign_in_at from the
+  // client. Never awaited: a failure here shouldn't block the app from
+  // finishing its own load.
+  void supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", userId)
 }
 
 /** Wires the Supabase auth session into useAuthStore. Mount once, near the app root. */

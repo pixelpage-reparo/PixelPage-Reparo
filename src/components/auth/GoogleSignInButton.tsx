@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from "react"
 import { toast } from "sonner"
 
@@ -14,7 +16,7 @@ export function GoogleSignInButton({ label = "Continuar com Google" }: GoogleSig
   async function handleClick() {
     setLoading(true)
     try {
-      await signInWithGoogle(`${window.location.origin}/app/dashboard`)
+      await signInWithGoogle(`${window.location.origin}/auth/callback?next=/app/dashboard`)
     } catch (error) {
       toast.error("Não foi possível continuar com o Google", {
         description: error instanceof Error ? error.message : "Tente novamente em instantes.",

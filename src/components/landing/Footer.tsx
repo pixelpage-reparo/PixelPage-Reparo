@@ -1,5 +1,5 @@
 import { ShieldCheck } from "lucide-react"
-import { Link } from "react-router-dom"
+import Link from "next/link"
 
 import { Logo } from "@/components/shared/Logo"
 
@@ -57,7 +57,7 @@ export function Footer() {
                   ) : (
                     <li key={link.label}>
                       <Link
-                        to={link.href}
+                        href={link.href}
                         className="text-navy-muted-foreground hover:text-navy-foreground text-sm transition-colors"
                       >
                         {link.label}

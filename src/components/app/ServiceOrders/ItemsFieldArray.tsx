@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useInventoryItems } from "@/hooks/queries/use-inventory"
+import { useServicesCatalog } from "@/hooks/queries/use-services-catalog"
 import type { ServiceOrderItemValues } from "@/lib/validators/service-order.schema"
 
 interface ItemsFieldArrayProps {
@@ -17,14 +18,18 @@ interface ItemsFieldArrayProps {
   onItemsChange: (items: ServiceOrderItemValues[]) => void
 }
 
+const CUSTOM_SERVICE_VALUE = "__custom__"
+
 /**
  * Not wired through react-hook-form's useFieldArray on purpose — items mix
- * free-text (service) and inventory-linked (part) rows with different
- * validation needs per row, so a plain controlled array kept in the parent
- * form's state is simpler to reason about than a typed field array here.
+ * free-text (custom service), catalog-linked (service) and inventory-linked
+ * (part) rows with different validation needs per row, so a plain
+ * controlled array kept in the parent form's state is simpler to reason
+ * about than a typed field array here.
  */
 export function ItemsFieldArray({ items, onItemsChange }: ItemsFieldArrayProps) {
   const { data: inventoryItems } = useInventoryItems()
+  const { data: servicesCatalog } = useServicesCatalog()
 
   function updateItem(index: number, patch: Partial<ItemsFieldArrayProps["items"][number]>) {
     onItemsChange(items.map((item, i) => (i === index ? { ...item, ...patch } : item)))
@@ -34,10 +39,17 @@ export function ItemsFieldArray({ items, onItemsChange }: ItemsFieldArrayProps) 
     onItemsChange(items.filter((_, i) => i !== index))
   }
 
-  function addItem() {
+  function addItem(kind: "service" | "part") {
     onItemsChange([
       ...items,
-      { kind: "service", inventory_item_id: null, description: "", quantity: 1, unit_price_cents: 0 },
+      {
+        kind,
+        inventory_item_id: null,
+        services_catalog_id: null,
+        description: "",
+        quantity: 1,
+        unit_price_cents: 0,
+      },
     ])
   }
 
@@ -50,7 +62,11 @@ export function ItemsFieldArray({ items, onItemsChange }: ItemsFieldArrayProps) 
           <Select
             value={item.kind}
             onValueChange={(kind) =>
-              updateItem(index, { kind: kind as "service" | "part", inventory_item_id: null })
+              updateItem(index, {
+                kind: kind as "service" | "part",
+                inventory_item_id: null,
+                services_catalog_id: null,
+              })
             }
           >
             <SelectTrigger className="w-full sm:w-32">
@@ -86,12 +102,41 @@ export function ItemsFieldArray({ items, onItemsChange }: ItemsFieldArrayProps) 
               </SelectContent>
             </Select>
           ) : (
-            <Input
-              className="flex-1"
-              placeholder="Descrição do serviço"
-              value={item.description}
-              onChange={(e) => updateItem(index, { description: e.target.value })}
-            />
+            <>
+              <Select
+                value={item.services_catalog_id ?? CUSTOM_SERVICE_VALUE}
+                onValueChange={(value) => {
+                  if (value === CUSTOM_SERVICE_VALUE) {
+                    updateItem(index, { services_catalog_id: null })
+                    return
+                  }
+                  const svc = servicesCatalog?.find((s) => s.id === value)
+                  updateItem(index, {
+                    services_catalog_id: value,
+                    description: svc?.name ?? item.description,
+                    unit_price_cents: svc?.default_price_cents ?? item.unit_price_cents,
+                  })
+                }}
+              >
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Buscar serviço..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={CUSTOM_SERVICE_VALUE}>+ Personalizado</SelectItem>
+                  {(servicesCatalog ?? []).map((svc) => (
+                    <SelectItem key={svc.id} value={svc.id}>
+                      {svc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                className="flex-1"
+                placeholder="Descrição do serviço"
+                value={item.description}
+                onChange={(e) => updateItem(index, { description: e.target.value })}
+              />
+            </>
           )}
 
           <Input
@@ -120,10 +165,16 @@ export function ItemsFieldArray({ items, onItemsChange }: ItemsFieldArrayProps) 
       ))}
 
       <div className="flex items-center justify-between">
-        <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addItem}>
-          <Plus className="size-3.5" />
-          Adicionar item
-        </Button>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => addItem("part")}>
+            <Plus className="size-3.5" />
+            Adicionar Peça
+          </Button>
+          <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => addItem("service")}>
+            <Plus className="size-3.5" />
+            + Personalizado
+          </Button>
+        </div>
         <span className="text-sm font-semibold">
           Total: {(totalCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
         </span>

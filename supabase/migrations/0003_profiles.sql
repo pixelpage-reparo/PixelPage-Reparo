@@ -7,6 +7,10 @@ create table profiles (
   email text not null,
   avatar_url text,
   role text not null default 'employee' check (role in ('owner', 'employee')),
+  -- Purely descriptive "cargo" — never grants access on its own. Module
+  -- visibility stays 100% controlled by module_permissions regardless of
+  -- job_title; see fn_has_module_access(), which never reads this column.
+  job_title text check (job_title in ('tecnico', 'recepcionista', 'gerente')),
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
