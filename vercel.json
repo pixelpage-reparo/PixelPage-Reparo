@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/purge-device-secrets",
-      "schedule": "0 * * * *"
+      "schedule": "0 3 * * *"
     }
   ]
 }
