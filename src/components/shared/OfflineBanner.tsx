@@ -1,3 +1,5 @@
+"use client"
+
 import { WifiOff } from "lucide-react"
 
 import { useOnlineStatus } from "@/hooks/use-online-status"
